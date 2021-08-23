@@ -1,3 +1,5 @@
+![image](image_distortion.png)
+
 # Overview
 Polyhedron distortion analysis using group theory.
 This could either be used as a standalone script or as API.
