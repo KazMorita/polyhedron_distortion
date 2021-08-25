@@ -2,11 +2,11 @@
 
 # Overview
 Polyhedron distortion analysis using group theory.
-This could either be used as a standalone script or as API.
+This could either be used as a standalone script or as an API.
 
 # Background
 This code allows you to convert distortions into a small-sized vector, possibly suitable for machine learning input.
-Example for octahedron is given, but it is applicable to any type of polyhedra.
+Example for octahedron is given, but it is applicable to any type of polyhedron.
 
 # Contents
 ## Dependencies
@@ -18,10 +18,11 @@ Example for octahedron is given, but it is applicable to any type of polyhedra.
 The two scripts `basis_generator.py` and `polyhedron_analysis.py` does not rely on each other.
 Installation procedure is same as other python scripts.
 
-If you want to use it as a script, you can simply execute it.
+If you want to use it as a script, you can simply execute it anywhere.
+
 If you want to use the API, you could either:
 - export PYTHONPATH=\<full path to the polyhedron_distortion directory\>:$PYTHONPATH
-- place the files in the same directory as your script
+- copy the script to place of your script
 
 # Usage
 ## As a script
@@ -29,9 +30,9 @@ If you want to use the API, you could either:
 ```
 python basis_generator.py
 ```
-This will create json file inside the `basis` directory.
+This will create octahedron basis sets written as a json file inside the `basis` directory.
 The repository already includes this output.
-- ### obtaining four dimensional vector
+- ### projection onto the basis set
 ```
 python polyhedron_analysis.py POSCAR n
 ```
@@ -43,5 +44,5 @@ Use the API for other input types.
 
 # Citation
 See the following paper for the theoretical background.
-(link to the publication to be added)
+K. Morita, D. W. Davies, K. T. Butler and A. Walsh, "Breaking the aristotype: featurisation of polyhedral distortions in perovskite crystals" (link to be added)
 
