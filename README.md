@@ -1,5 +1,6 @@
 ![image](image_distortion.png)
 
+[![DOI](https://zenodo.org/badge/392753173.svg)](https://zenodo.org/badge/latestdoi/392753173)
 # Overview
 Polyhedron distortion analysis using group theory.
 This could either be used as a standalone script or as an API.
