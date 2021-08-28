@@ -41,7 +41,7 @@ where POSCAR is [VASP](https://www.vasp.at/) POSCAR and n is n-th atom in the ce
 Use the API for other input types.
 
 ## As an API
-- see [Tutorial notebook](https://github.com/KazMorita/polyhedron_distortion/Tutorial1_API.ipynb)
+- see [Tutorial notebook](https://github.com/KazMorita/polyhedron_distortion/blob/main/Tutorial1_API.ipynb)
 
 # Citation
 See the following paper for the theoretical background.
