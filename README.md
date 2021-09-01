@@ -45,5 +45,5 @@ Use the API for other input types.
 
 # Citation
 See the following paper for the theoretical background.
-K. Morita, D. W. Davies, K. T. Butler and A. Walsh, "Breaking the aristotype: featurisation of polyhedral distortions in perovskite crystals" (link to be added)
+[K. Morita, D. W. Davies, K. T. Butler and A. Walsh, "Breaking the aristotype: featurisation of polyhedral distortions in perovskite crystals"](https://doi.org/10.33774/chemrxiv-2021-4zs27)
 
