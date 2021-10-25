@@ -22,16 +22,16 @@ def calc_displacement(struct, centre_atom, nearest_neighbour_indices,
         species=[struct.sites[centre_atom]._species]
         + [struct.sites[i]._species for i in nearest_neighbour_indices],
         coords=np.concatenate((np.zeros((1, 3)), (np.array([(
-            struct.sites[site]._coords
+            struct.sites[site].frac_coords
             + struct.lattice.get_cartesian_coords(images[i])
         )
             for i, site in enumerate(nearest_neighbour_indices)
-        ]) - struct.sites[centre_atom]._coords
-        ) / ave_bond))
+        ]) - struct.sites[centre_atom].frac_coords
+        ) / ave_bond), axis=0)
     )
     pymatgen_molecule_ideal = pymatgen.core.structure.Molecule(
         species=pymatgen_molecule.species,
-        coords=np.concatenate((np.zeros((1, 3)), ideal_coords)))
+        coords=np.concatenate((np.zeros((1, 3)), ideal_coords), axis=0))
 
     # match "molecular" structure (Hungarian algorithm)
     (inds, u, v, _) = pymatgen.analysis.molecule_matcher.HungarianOrderMatcher(
@@ -132,4 +132,3 @@ def main():  # for vasp input
 
 if __name__ == '__main__':
     sys.exit(main())
-
