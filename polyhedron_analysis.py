@@ -14,39 +14,47 @@ import pymatgen.analysis.local_env
 import pymatgen.analysis.molecule_matcher
 
 
-def calc_displacement(struct, centre_atom, nearest_neighbour_indices,
-                      ave_bond, images, ideal_coords, irrep_distortions):
-
-    # create "molecules"
+def construct_molecule(struct, centre_atom, nearest_neighbour_indices,
+                       ave_bond, images):
     pymatgen_molecule = pymatgen.core.structure.Molecule(
         species=[struct.sites[centre_atom]._species]
         + [struct.sites[i]._species for i in nearest_neighbour_indices],
         coords=np.concatenate((np.zeros((1, 3)), (np.array([(
-            struct.sites[site].frac_coords
+            struct.sites[site].coords
             + struct.lattice.get_cartesian_coords(images[i])
         )
             for i, site in enumerate(nearest_neighbour_indices)
-        ]) - struct.sites[centre_atom].frac_coords
+        ]) - struct.sites[centre_atom].coords
         ) / ave_bond), axis=0)
     )
-    pymatgen_molecule_ideal = pymatgen.core.structure.Molecule(
-        species=pymatgen_molecule.species,
+    return pymatgen_molecule
+
+
+def construct_molecule_ideal(ideal_coords, species):
+    return pymatgen.core.structure.Molecule(
+        species=species,
         coords=np.concatenate((np.zeros((1, 3)), ideal_coords), axis=0))
 
-    # match "molecular" structure (Hungarian algorithm)
+
+def match_molecules(molecule_transform, molecule_reference):
+    # match molecules
     (inds, u, v, _) = pymatgen.analysis.molecule_matcher.HungarianOrderMatcher(
-        pymatgen_molecule_ideal).match(pymatgen_molecule)
+        molecule_reference).match(molecule_transform)
 
     # affine transform
-    pymatgen_molecule.apply_operation(pymatgen.core.operations.SymmOp(
+    molecule_transform.apply_operation(pymatgen.core.operations.SymmOp(
         np.concatenate((
             np.concatenate((u.T, v.reshape(3, 1)), axis=1),
             [np.zeros(4)]), axis=0
         )))
-    pymatgen_molecule._sites = np.array(
-        pymatgen_molecule._sites)[inds].tolist()
+    molecule_transform._sites = np.array(
+        molecule_transform._sites)[inds].tolist()
 
-    # project
+    return molecule_transform
+
+
+def calc_displacement(
+        pymatgen_molecule, pymatgen_molecule_ideal, irrep_distortions):
     return np.tensordot(
         irrep_distortions,
         (pymatgen_molecule.cart_coords
@@ -89,16 +97,27 @@ def calc_distortions_from_struct_octahedron(mp_struct, centre_atom):
             structure=mp_struct, n=centre_atom), key=lambda x: -x['weight']
     )[:len(ideal_coords)]
 
-    # main routine
-    distortion_amplitudes = calc_displacement(
+    # define "molecules"
+    pymatgen_molecule = construct_molecule(
         struct=mp_struct,
         centre_atom=centre_atom,
         nearest_neighbour_indices=[d['site_index'] for d in temp_dict],
-        ave_bond=np.mean([mp_struct.get_distance(
-            centre_atom, d['site_index']) for d in temp_dict]),
+        ave_bond=np.mean([
+            mp_struct.get_distance(centre_atom, d['site_index'],
+                                   d['image']) for d in temp_dict
+        ]),
         images=[d['image'] for d in temp_dict],
-        ideal_coords=ideal_coords,
-        irrep_distortions=irrep_distortions
+    )
+    pymatgen_molecule_ideal = construct_molecule_ideal(
+        ideal_coords, pymatgen_molecule.species)
+
+    # transform
+    pymatgen_molecule = match_molecules(
+        pymatgen_molecule, pymatgen_molecule_ideal)
+
+    # project
+    distortion_amplitudes = calc_displacement(
+        pymatgen_molecule, pymatgen_molecule_ideal, irrep_distortions
     )
 
     # average
