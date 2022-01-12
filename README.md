@@ -7,7 +7,7 @@ This could either be used as a standalone script or as an API.
 
 # Background
 This code allows you to convert distortions into a small-sized vector, possibly suitable for machine learning input.
-Example for octahedron is given, but it is applicable to any type of polyhedron.
+An example for octahedron is given, but it is applicable to any type of polyhedron.
 
 # Contents
 ## Dependencies
@@ -17,13 +17,13 @@ Example for octahedron is given, but it is applicable to any type of polyhedron.
 
 ## Installation
 The two scripts `basis_generator.py` and `polyhedron_analysis.py` does not rely on each other.
-Installation procedure is same as other python scripts.
+The installation procedure is the same as other python scripts.
 
 If you want to use it as a script, you can simply execute it anywhere.
 
 If you want to use the API, you could either:
 - export PYTHONPATH=\<full path to the polyhedron_distortion directory\>:$PYTHONPATH
-- copy the script to place of your script
+- copy the script to the place of your script
 
 # Usage
 ## As a script
@@ -37,7 +37,7 @@ The repository already includes this output.
 ```
 python polyhedron_analysis.py POSCAR n
 ```
-where POSCAR is [VASP](https://www.vasp.at/) POSCAR and n is n-th atom in the centre of the octahedron.
+where POSCAR is [VASP](https://www.vasp.at/) POSCAR and n is the n-th atom in the centre of the octahedron.
 Use the API for other input types.
 
 ## As an API
@@ -45,5 +45,5 @@ Use the API for other input types.
 
 # Citation
 See the following paper for the theoretical background.
-[K. Morita, D. W. Davies, K. T. Butler and A. Walsh, "Breaking the aristotype: featurisation of polyhedral distortions in perovskite crystals"](https://doi.org/10.33774/chemrxiv-2021-4zs27)
+[K. Morita, D. W. Davies, K. T. Butler and A. Walsh, "Breaking the aristotype: featurization of polyhedral distortions in perovskite crystals"](https://pubs.acs.org/doi/abs/10.1021/acs.chemmater.1c02959)
 
