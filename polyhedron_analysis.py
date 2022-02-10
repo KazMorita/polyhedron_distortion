@@ -64,7 +64,7 @@ def calc_displacement(
 def calc_displacement_centre(
         struct, centre_atom, origin, ave_bond, matrix_rotation):
     displacement_centre = np.dot(
-        (struct.sites[centre_atom]._coords - origin) / ave_bond, matrix_rotation)
+        (struct.sites[centre_atom].coords - origin) / ave_bond, matrix_rotation)
     return np.tensordot(np.eye(3), displacement_centre, axes=1)
 
 
