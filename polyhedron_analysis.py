@@ -15,7 +15,7 @@ import pymatgen.analysis.molecule_matcher
 
 
 def construct_molecule(struct, centre_atom, nearest_neighbour_indices,
-                       ave_bond, images):
+                       ave_bond, images, origin):
     pymatgen_molecule = pymatgen.core.structure.Molecule(
         species=[struct.sites[centre_atom]._species]
         + [struct.sites[i]._species for i in nearest_neighbour_indices],
@@ -24,7 +24,7 @@ def construct_molecule(struct, centre_atom, nearest_neighbour_indices,
             + struct.lattice.get_cartesian_coords(images[i])
         )
             for i, site in enumerate(nearest_neighbour_indices)
-        ]) - struct.sites[centre_atom].coords
+        ]) - origin
         ) / ave_bond), axis=0)
     )
     return pymatgen_molecule
@@ -50,7 +50,7 @@ def match_molecules(molecule_transform, molecule_reference):
     molecule_transform._sites = np.array(
         molecule_transform._sites)[inds].tolist()
 
-    return molecule_transform
+    return (molecule_transform, u, v)
 
 
 def calc_displacement(
@@ -61,7 +61,18 @@ def calc_displacement(
          - pymatgen_molecule_ideal.cart_coords).ravel()[3:], axes=1)
 
 
+def calc_displacement_centre(
+        struct, centre_atom, origin, ave_bond, matrix_rotation):
+    displacement_centre = np.dot(
+        (struct.sites[centre_atom]._coords - origin) / ave_bond, matrix_rotation)
+    return np.tensordot(np.eye(3), displacement_centre, axes=1)
+
+
 def calc_distortions_from_struct_octahedron(mp_struct, centre_atom):
+    return calc_distortions_from_struct_octahedron_withcentre(mp_struct, centre_atom)[:4]
+
+
+def calc_distortions_from_struct_octahedron_withcentre(mp_struct, centre_atom):
     # constants
     ideal_coords = [
         [-1,  0,  0],
@@ -98,27 +109,40 @@ def calc_distortions_from_struct_octahedron(mp_struct, centre_atom):
     )[:len(ideal_coords)]
 
     # define "molecules"
+    temp_coords = np.array([
+        mp_struct[d['site_index']].coords
+        + mp_struct.lattice.get_cartesian_coords(d['image'])
+        for d in temp_dict
+    ])
+    molecule_origin = np.mean(temp_coords, axis=0)
+    ave_bond = temp_coords - molecule_origin
+    ave_bond = np.mean(np.sqrt(np.sum(ave_bond * ave_bond, axis=1)))
+
     pymatgen_molecule = construct_molecule(
         struct=mp_struct,
         centre_atom=centre_atom,
         nearest_neighbour_indices=[d['site_index'] for d in temp_dict],
-        ave_bond=np.mean([
-            mp_struct.get_distance(centre_atom, d['site_index'],
-                                   d['image']) for d in temp_dict
-        ]),
+        ave_bond=ave_bond,
         images=[d['image'] for d in temp_dict],
+        origin=molecule_origin,
     )
     pymatgen_molecule_ideal = construct_molecule_ideal(
         ideal_coords, pymatgen_molecule.species)
 
     # transform
-    pymatgen_molecule = match_molecules(
+    (pymatgen_molecule, matrix_rotation, _) = match_molecules(
         pymatgen_molecule, pymatgen_molecule_ideal)
 
     # project
     distortion_amplitudes = calc_displacement(
         pymatgen_molecule, pymatgen_molecule_ideal, irrep_distortions
     )
+
+    # calc projection for central atom
+    centre_atom_amplitude = calc_displacement_centre(
+        mp_struct, centre_atom, molecule_origin, ave_bond, matrix_rotation)
+    centre_atom_amplitude = np.sqrt(
+        np.sum(centre_atom_amplitude * centre_atom_amplitude))
 
     # average
     distortion_amplitudes = distortion_amplitudes * distortion_amplitudes
@@ -130,7 +154,7 @@ def calc_distortions_from_struct_octahedron(mp_struct, centre_atom):
         count += dim
     distortion_amplitudes = np.sqrt(temp_list)[3:]
 
-    return distortion_amplitudes
+    return np.concatenate((distortion_amplitudes, [centre_atom_amplitude]))
 
 
 def main():  # for vasp input
@@ -143,8 +167,9 @@ def main():  # for vasp input
     mp_struct = pymatgen.io.vasp.inputs.Poscar.from_file(INFILE).structure
 
     # main analysis
-    print('#Eg, T2g, T1u, T2u')
-    print(calc_distortions_from_struct_octahedron(mp_struct, centre_atom))
+    print('#Eg, T2g, T1u, T2u, T1u(centre)')
+    print(calc_distortions_from_struct_octahedron_withcentre(
+        mp_struct, centre_atom))
 
     return 0
 

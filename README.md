@@ -43,6 +43,9 @@ Use the API for other input types.
 ## As an API
 - see [Tutorial notebook](https://github.com/KazMorita/polyhedron_distortion/blob/main/Tutorial1_API.ipynb)
 
+# Caveats
+- Updates may include breaking changes. Specify versions to obtain reproducible results.
+
 # Citation
 See the following paper for the theoretical background.
 [K. Morita, D. W. Davies, K. T. Butler and A. Walsh, "Breaking the aristotype: featurization of polyhedral distortions in perovskite crystals"](https://pubs.acs.org/doi/abs/10.1021/acs.chemmater.1c02959)
