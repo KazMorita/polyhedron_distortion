@@ -17,8 +17,10 @@ import pymatgen.analysis.molecule_matcher
 def construct_molecule(struct, centre_atom, nearest_neighbour_indices,
                        ave_bond, images, origin):
     pymatgen_molecule = pymatgen.core.structure.Molecule(
-        species=[struct.sites[centre_atom]._species]
-        + [struct.sites[i]._species for i in nearest_neighbour_indices],
+        # species=[struct.sites[centre_atom]._species]
+        # + [struct.sites[i]._species for i in nearest_neighbour_indices],
+        species=[pymatgen.core.periodic_table.Species(
+            'H')] * (len(images) + 1),
         coords=np.concatenate((np.zeros((1, 3)), (np.array([(
             struct.sites[site].coords
             + struct.lattice.get_cartesian_coords(images[i])
@@ -31,8 +33,10 @@ def construct_molecule(struct, centre_atom, nearest_neighbour_indices,
 
 
 def construct_molecule_ideal(ideal_coords, species):
+    # XXX species currently not used
     return pymatgen.core.structure.Molecule(
-        species=species,
+        species=[pymatgen.core.periodic_table.Species(
+            'H')] * (len(ideal_coords) + 1),
         coords=np.concatenate((np.zeros((1, 3)), ideal_coords), axis=0))
 
 
