@@ -105,12 +105,23 @@ def calc_distortions_from_struct_octahedron_withcentre(mp_struct, centre_atom):
             irrep_distortions.append(elem)
 
     # handle nearest neighbours
-    mp_struct.get_neighbor_list(r=3.5)
-    nearest_neighbour_finder = pymatgen.analysis.local_env.CrystalNN()
+    mp_struct.get_neighbor_list(r=6.5)
+    nearest_neighbour_finder = pymatgen.analysis.local_env.CrystalNN(
+        weighted_cn=False,
+        cation_anion=False,
+        distance_cutoffs=(0.5, 6.5),
+        x_diff_weight=3.0,
+        porous_adjustment=True,
+        search_cutoff=7.0,
+        fingerprint_length=None,
+    )
     temp_dict = sorted(
         nearest_neighbour_finder.get_nn_info(
             structure=mp_struct, n=centre_atom), key=lambda x: -x['weight']
     )[:len(ideal_coords)]
+    if(len(ideal_coords) < 6):
+        sys.stderr.write('failed to find nearest neighbours\n')
+        sys.exit(1)
 
     # define "molecules"
     temp_coords = np.array([
