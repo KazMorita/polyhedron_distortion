@@ -116,7 +116,6 @@ def calc_distortions_from_struct_octahedron_withcentre_withligands(
 def main():  # for vasp input
     # get arguments
     argvs = sys.argv
-    print(argvs)
     INFILE = argvs[1]  # POSCAR
     centre_atom = int(argvs[2]) - 1
     ligand_atoms = [int(argvs[3]) - 1,
