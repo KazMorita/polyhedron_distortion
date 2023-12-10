@@ -33,11 +33,18 @@ python basis_generator.py
 ```
 This will create octahedron basis sets written as a json file inside the `basis` directory.
 The repository already includes this output.
-- ### projection onto the basis set
+- ### projection onto the basis set (simple)
 ```
 python polyhedron_analysis.py POSCAR n
 ```
-where POSCAR is [VASP](https://www.vasp.at/) POSCAR and n is the n-th atom in the centre of the octahedron.
+where POSCAR is [VASP](https://www.vasp.at/) POSCAR and n is the index of atom in the centre of the octahedron.
+Use the API for other input types.
+
+- ### projection onto the basis set with explicit ligand indices
+```
+python polyhedron_analysis_set_ligands.py POSCAR n m1 m2 m3 m4 m5 m6
+```
+where POSCAR is [VASP](https://www.vasp.at/) POSCAR, n is the index of atom in the centre of the octahedron, and m1 is the index atom of a ligands (same with m2, m3, m4, m5, m6).
 Use the API for other input types.
 
 ## As an API

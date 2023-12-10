@@ -13,70 +13,16 @@ import pymatgen.io.vasp
 import pymatgen.analysis.local_env
 import pymatgen.analysis.molecule_matcher
 
-
-def construct_molecule(struct, centre_atom, nearest_neighbour_indices,
-                       ave_bond, images, origin):
-    pymatgen_molecule = pymatgen.core.structure.Molecule(
-        # species=[struct.sites[centre_atom]._species]
-        # + [struct.sites[i]._species for i in nearest_neighbour_indices],
-        species=[pymatgen.core.periodic_table.Species(
-            'H')] * (len(images) + 1),
-        coords=np.concatenate((np.zeros((1, 3)), (np.array([(
-            struct.sites[site].coords
-            + struct.lattice.get_cartesian_coords(images[i])
-        )
-            for i, site in enumerate(nearest_neighbour_indices)
-        ]) - origin
-        ) / ave_bond), axis=0)
-    )
-    return pymatgen_molecule
+from polyhedron_analysis import construct_molecule, construct_molecule_ideal, match_molecules, calc_displacement, calc_displacement_centre
 
 
-def construct_molecule_ideal(ideal_coords, species):
-    # XXX species currently not used
-    return pymatgen.core.structure.Molecule(
-        species=[pymatgen.core.periodic_table.Species(
-            'H')] * (len(ideal_coords) + 1),
-        coords=np.concatenate((np.zeros((1, 3)), ideal_coords), axis=0))
+def calc_distortions_from_struct_octahedron_withcentre_withligands(
+        mp_struct, centre_atom, ligand_atoms):
+    # check args
+    if(len(ligand_atoms) != 6):
+        sys.stderr.write('Error: len(ligand_atoms) must be 6.\n')
+        sys.exit(0)
 
-
-def match_molecules(molecule_transform, molecule_reference):
-    # match molecules
-    (inds, u, v, _) = pymatgen.analysis.molecule_matcher.HungarianOrderMatcher(
-        molecule_reference).match(molecule_transform)
-
-    # affine transform
-    molecule_transform.apply_operation(pymatgen.core.operations.SymmOp(
-        np.concatenate((
-            np.concatenate((u.T, v.reshape(3, 1)), axis=1),
-            [np.zeros(4)]), axis=0
-        )))
-    molecule_transform._sites = np.array(
-        molecule_transform._sites)[inds].tolist()
-
-    return (molecule_transform, u, v)
-
-
-def calc_displacement(
-        pymatgen_molecule, pymatgen_molecule_ideal, irrep_distortions):
-    return np.tensordot(
-        irrep_distortions,
-        (pymatgen_molecule.cart_coords
-         - pymatgen_molecule_ideal.cart_coords).ravel()[3:], axes=1)
-
-
-def calc_displacement_centre(
-        struct, centre_atom, origin, ave_bond, matrix_rotation):
-    displacement_centre = np.dot(
-        (struct.sites[centre_atom].coords - origin) / ave_bond, matrix_rotation)
-    return np.tensordot(np.eye(3), displacement_centre, axes=1)
-
-
-def calc_distortions_from_struct_octahedron(mp_struct, centre_atom):
-    return calc_distortions_from_struct_octahedron_withcentre(mp_struct, centre_atom)[:4]
-
-
-def calc_distortions_from_struct_octahedron_withcentre(mp_struct, centre_atom):
     # constants
     ideal_coords = [
         [-1,  0,  0],
@@ -105,21 +51,16 @@ def calc_distortions_from_struct_octahedron_withcentre(mp_struct, centre_atom):
             irrep_distortions.append(elem)
 
     # handle nearest neighbours
-    mp_struct.get_neighbor_list(r=6.5)
-    nearest_neighbour_finder = pymatgen.analysis.local_env.CrystalNN(
-        weighted_cn=False,
-        cation_anion=False,
-        distance_cutoffs=(0.5, 6.5),
-        x_diff_weight=3.0,
-        porous_adjustment=True,
-        search_cutoff=7.0,
-        fingerprint_length=None,
-    )
-    temp_dict = sorted(
-        nearest_neighbour_finder.get_nn_info(
-            structure=mp_struct, n=centre_atom), key=lambda x: -x['weight']
-    )[:len(ideal_coords)]
-    if(len(ideal_coords) < 6):
+    temp_dict_all_sites = mp_struct.get_all_neighbors(
+        r=5.0, sites=[mp_struct.sites[centre_atom]], numerical_tol=1e-08)
+    temp_dict = [
+        {
+            'site': d,
+            'image': d.image,
+            'site_index': d.index,
+        } for d in temp_dict_all_sites[0] if d.index in ligand_atoms
+    ]
+    if(len(temp_dict) < 6):
         sys.stderr.write('failed to find nearest neighbours\n')
         sys.exit(1)
 
@@ -175,17 +116,26 @@ def calc_distortions_from_struct_octahedron_withcentre(mp_struct, centre_atom):
 def main():  # for vasp input
     # get arguments
     argvs = sys.argv
+    print(argvs)
     INFILE = argvs[1]  # POSCAR
     centre_atom = int(argvs[2]) - 1
+    ligand_atoms = [int(argvs[3]) - 1,
+                    int(argvs[4]) - 1,
+                    int(argvs[5]) - 1,
+                    int(argvs[6]) - 1,
+                    int(argvs[7]) - 1,
+                    int(argvs[8]) - 1,
+                    ]
 
     # convert to pymatgen
     mp_struct = pymatgen.io.vasp.inputs.Poscar.from_file(
-            INFILE, check_for_POTCAR=False).structure
+        INFILE, check_for_POTCAR=False).structure
 
     # main analysis
     print('#Eg, T2g, T1u, T2u, T1u(centre)')
-    print(calc_distortions_from_struct_octahedron_withcentre(
-        mp_struct, centre_atom))
+    print(calc_distortions_from_struct_octahedron_withcentre_withligands(
+        mp_struct, centre_atom, ligand_atoms
+    ))
 
     return 0
 
